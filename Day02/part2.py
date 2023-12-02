@@ -15,7 +15,6 @@ def main():
   with open('./input.txt') as file:
     for line in file:
       tokens = line.strip().split(':')
-      game_id = int(re.match(r'Game (\d+)', tokens[0]).group(1))
       handfuls = tokens[1].split(';')
       current = {}
 
@@ -29,7 +28,6 @@ def main():
 
           if color not in current or current[color] < num:
             current[color] = num
-
 
       current_total = 1
       for color in current:
