@@ -91,6 +91,10 @@ def main():
           seeds.extend([num for num in range(start, start+length)])
       elif not header_match:
         while line.strip() != '':
+          print('NEW LINE')
+          print(line)
+          print(groups)
+
           # Create a new group for this line
           current_map = [int(num) for num in line.split()]
           range_start = current_map[1]
@@ -111,7 +115,7 @@ def main():
 
             for new_group_chunk in new_group_chunks:
               # Find all overlaps (we can assume that there are no overlaps within groups)
-              if min(range_end, group.end) - max(range_start, group.start) + 1 > 0:
+              if min(new_group_chunk.end, group.end) - max(new_group_chunk.start, group.start) + 1 > 0:
                 # Subtract the two groups from each other
                 sub_groups = get_group_intersections(group, new_group_chunk)
                 intersection = sub_groups[0]
@@ -146,10 +150,20 @@ def main():
         
       line = file.readline()
   
-  #print(min(seeds))
   print('Groups:')
+  finished = set()
+
   for group in groups:
-    print(group)
+    for i in range(0, len(seeds)):
+      if i in finished:
+        continue
+
+      seed = seeds[i]
+      if is_in_range(seed, group.start, group.end):
+        seeds[i] = seed + group.offset
+        finished.add(i)
+    
+  print(min(seeds))
 
 if __name__ == '__main__':
   main()
