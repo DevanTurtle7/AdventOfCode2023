@@ -1,7 +1,8 @@
 number=$1
 template="
 def main():
-  pass
+  with open('./input.txt') as file:
+    pass
 
 if __name__ == '__main__':
   main()
