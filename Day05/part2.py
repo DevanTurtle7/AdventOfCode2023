@@ -10,10 +10,6 @@ class Group:
     return f'Group(start={self.start}, end={self.end}, offset={self.offset})'
 
 
-def is_in_range(num, start, end):
-  return num >= start and num <= end
-
-
 def get_group_intersections(group1, group2):
   """
   Return: A tuple where index 0 is the intersection of the 2 groups.
@@ -75,26 +71,30 @@ def main():
     line = file.readline()
     first = True
 
-    # TODO: Starting array needs rewritten. Will probably need to ue ranges like Group
-    # Will probably need to check them after we define the groups
-
     while line != '':
       header_match = re.match(r'(.+)-to-(.*) map:', line)
 
       if first:
         first = False
         seed_tokens = line.split(':')[1].strip().split()
+        min_seed = None
+        max_seed = None
 
         for i in range(0, len(seed_tokens), 2):
           start = int(seed_tokens[i])
           length = int(seed_tokens[i+1])
-          seeds.extend([num for num in range(start, start+length)])
+          end = start + length - 1
+          seeds.append(Group(start, end, 0))
+
+          if min_seed == None or start < min_seed:
+            min_seed = start
+          if max_seed == None or end > max_seed:
+            max_seed = end
+          
+        # Add the default group of +0
+        groups.append(Group(min_seed, max_seed, 0))
       elif not header_match:
         while line.strip() != '':
-          print('NEW LINE')
-          print(line)
-          print(groups)
-
           # Create a new group for this line
           current_map = [int(num) for num in line.split()]
           range_start = current_map[1]
@@ -110,8 +110,6 @@ def main():
           # Iterate over groups
           for group in groups:
             new_chunks = [chunk for chunk in new_group_chunks]
-            print('new chunks:')
-            print(new_chunks)
 
             for new_group_chunk in new_group_chunks:
               # Find all overlaps (we can assume that there are no overlaps within groups)
@@ -121,10 +119,6 @@ def main():
                 intersection = sub_groups[0]
                 group1_chunks = sub_groups[1]
                 group2_chunks = sub_groups[2]
-                print('overlap')
-                print(group, new_group_chunk)
-                print(sub_groups)
-                print()
 
                 # Replace the current group with the INTERSECTION
                 # If the current group has a chopped section where there is no intersction, add that back too
@@ -150,20 +144,22 @@ def main():
         
       line = file.readline()
   
-  print('Groups:')
-  finished = set()
+  smallest = None
 
   for group in groups:
-    for i in range(0, len(seeds)):
-      if i in finished:
-        continue
+    for seed in seeds:
+      # Check for an overlap
+      if min(seed.end, group.end) - max(seed.start, group.start) + 1 > 0:
+        intersection = get_group_intersections(seed, group)[0]
 
-      seed = seeds[i]
-      if is_in_range(seed, group.start, group.end):
-        seeds[i] = seed + group.offset
-        finished.add(i)
+        # Should only ever be one, but iterate just incase
+        for item in intersection:
+          current = item.start + group.offset
+
+          if smallest == None or current < smallest:
+            smallest = current 
     
-  print(min(seeds))
+  print(smallest)
 
 if __name__ == '__main__':
   main()
