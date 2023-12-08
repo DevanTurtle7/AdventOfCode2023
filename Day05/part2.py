@@ -1,3 +1,5 @@
+# This is a MESS!
+
 import re
 
 class Group:
@@ -61,11 +63,11 @@ def get_group_intersections(group1, group2):
     return (result[0], result[2], result[1])
   else:
     return None
-
+  
 
 def main():
   seeds = []
-  groups = []
+  layers = []
 
   with open('./input.txt') as file:
     line = file.readline()
@@ -90,10 +92,10 @@ def main():
             min_seed = start
           if max_seed == None or end > max_seed:
             max_seed = end
-          
-        # Add the default group of +0
-        groups.append(Group(min_seed, max_seed, 0))
+
       elif not header_match:
+        layer = []
+
         while line.strip() != '':
           # Create a new group for this line
           current_map = [int(num) for num in line.split()]
@@ -101,65 +103,53 @@ def main():
           range_end = range_start + current_map[2] - 1
           offset = current_map[0]  - range_start
           new_group = Group(range_start, range_end, offset)
-
-          # Create a list and put new_group into it. This group will likely get chopped up
-          new_group_chunks = [new_group]
-          to_remove = []
-          to_add = []
-
-          # Iterate over groups
-          for group in groups:
-            new_chunks = [chunk for chunk in new_group_chunks]
-
-            for new_group_chunk in new_group_chunks:
-              # Find all overlaps (we can assume that there are no overlaps within groups)
-              if min(new_group_chunk.end, group.end) - max(new_group_chunk.start, group.start) + 1 > 0:
-                # Subtract the two groups from each other
-                sub_groups = get_group_intersections(group, new_group_chunk)
-                intersection = sub_groups[0]
-                group1_chunks = sub_groups[1]
-                group2_chunks = sub_groups[2]
-
-                # Replace the current group with the INTERSECTION
-                # If the current group has a chopped section where there is no intersction, add that back too
-                to_remove.append(group)
-                to_add.extend(intersection)
-                to_add.extend(group1_chunks)
-
-                # Put the scraps of the new_group into the new_group list and continue
-                new_chunks.remove(new_group_chunk)
-                new_chunks.extend(group2_chunks)
-
-            new_group_chunks = new_chunks
-          
-          for group in to_remove:
-            groups.remove(group)
-
-          groups.extend(to_add)
-          groups.extend(new_group_chunks)
-          to_remove = []
-          to_add = []
+          layer.append(new_group)
 
           line = file.readline()
-        
+
+        if len(layer) > 0:
+          layers.append(layer)
+
       line = file.readline()
-  
+
+  for layer in layers:
+    transformed_seeds = []
+    leftover_seeds = [seed for seed in seeds] 
+
+    for group in layer:
+      new_leftover_seeds = []
+      added = set()
+
+      for i in range(0, len(leftover_seeds)):
+        seed = leftover_seeds[i]
+
+        if min(group.end, seed.end) - max(group.start, seed.start) + 1 > 0:
+          added.add(i)
+          intersections = get_group_intersections(seed, group)
+          new_leftover_seeds.extend(intersections[1])
+
+          for item in intersections[0]:
+            item.start += item.offset
+            item.end += item.offset
+            item.offset = 0
+            transformed_seeds.append(item)
+        
+      for i in range(0, len(leftover_seeds)):
+        if i not in added:
+          new_leftover_seeds.append(leftover_seeds[i])
+      leftover_seeds = new_leftover_seeds
+
+    seeds = [seed for seed in transformed_seeds]
+    seeds.extend([seed for seed in leftover_seeds])
+
   smallest = None
 
-  for group in groups:
-    for seed in seeds:
-      # Check for an overlap
-      if min(seed.end, group.end) - max(seed.start, group.start) + 1 > 0:
-        intersection = get_group_intersections(seed, group)[0]
-
-        # Should only ever be one, but iterate just incase
-        for item in intersection:
-          current = item.start + group.offset
-
-          if smallest == None or current < smallest:
-            smallest = current 
-    
+  for seed in seeds:
+    if smallest == None or seed.start < smallest:
+      smallest = seed.start
+  
   print(smallest)
+
 
 if __name__ == '__main__':
   main()

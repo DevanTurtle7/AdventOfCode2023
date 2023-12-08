@@ -47,11 +47,11 @@ class Card:
 class Hand:
   def __init__(self, cards, bet):
     self.cards = cards
-    self.cards.sort()
     self.bet = bet
 
-    pairs = 0
+    score = 0
     counts = {}
+    config = []
 
     for card in self.cards:
       if card in counts:
@@ -61,10 +61,26 @@ class Hand:
       
     for card in counts:
       count = counts[card]
-      if count >= 2:
-        pairs += count / 2
+      config.append(count)
     
-    self.pairs = pairs
+    config.sort(reverse=True)
+
+    if config[0] == 5:
+      score = 6
+    elif config[0] == 4:
+      score = 5
+    elif config[0] == 3 and config[1] == 2:
+        score = 4
+    elif config[0] == 3 and config[1] == 1:
+        score = 3
+    elif config[0] == 2 and config[1] == 2:
+      score = 2
+    elif config[0] == 2 and config[1] == 1:
+      score = 1
+    else:
+      score = 0
+    
+    self.score = score
   
   def __eq__(self, other):
     if not isinstance(other, Hand):
@@ -79,11 +95,17 @@ class Hand:
   def __gt__(self, other):
     if not isinstance(other, Hand):
       return False
-    if other.pairs != self.pairs:
-      return self.pairs > other.pairs
+    if other.score != self.score:
+      return self.score > other.score
+    else:
+      for i in range(0, len(self.cards)):
+        if self.cards[i] == other.cards[i]:
+          continue
+        else:
+          return self.cards[i] > other.cards[i]
 
   def __repr__(self):
-    return f'Hand(cards={self.cards}, bet={self.bet}, pairs={self.pairs})'
+    return f'Hand(cards={self.cards}, bet={self.bet}, score={self.score})'
     
 
 def main():
@@ -103,7 +125,13 @@ def main():
       hand = Hand(hand_arr, bet)
       hands.append(hand)
   
-  print(hands)
+  hands.sort()
+  winnings = 0
+  
+  for i in range(0, len(hands)):
+    winnings += (i + 1) * hands[i].bet
+
+  print(winnings)
 
 
 if __name__ == '__main__':
